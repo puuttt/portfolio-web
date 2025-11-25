@@ -23,7 +23,7 @@ export default function About() {
             >
                <Image 
                  src="/images/me.JPG"
-                 alt="Rasyid Putra"
+                 alt="Rasyid Putra Wiendata"
                  fill
                  className="object-cover"
                />
