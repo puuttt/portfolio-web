@@ -1,0 +1,41 @@
+kind: pipeline
+type: docker
+name: deploy-nextjs
+
+steps:
+# 1. BUILD IMAGE & PUSH KE GITEA REGISTRY
+- name: build-push
+  image: plugins/docker
+  settings:
+    # Sesuaikan IP Gitea Anda
+    registry: 192.168.56.10:3000
+    # Ganti 'admin' dengan username Gitea, 'nama-repo' dengan nama repo Anda
+    repo: 192.168.56.10:3000/admin/nama-repo
+    tags: [ latest, "${DRONE_COMMIT_SHA:0:8}" ]
+    
+    # Login menggunakan Secrets Drone
+    username:
+      from_secret: GITEA_USER
+    password:
+      from_secret: GITEA_PASS
+      
+    # PENTING: Izinkan HTTP
+    insecure: true
+
+# 2. DEPLOY KE KUBERNETES
+- name: deploy-k8s
+  image: lalk/drone-kubectl
+  settings:
+    kubernetes_server: https://192.168.56.10:6443
+    kubernetes_token:
+      from_secret: KUBE_TOKEN
+    insecure_skip_tls_verify: true
+  commands:
+    # Pastikan folder 'deploy' dan file 'deployment.yaml' sudah ada di repo
+    - kubectl apply -f deploy/deployment.yaml -n dev
+    # Update image
+    - kubectl set image deployment/nextjs-app nextjs-container=192.168.56.10:3000/admin/nama-repo:${DRONE_COMMIT_SHA:0:8} -n dev
+
+trigger:
+  branch:
+  - main

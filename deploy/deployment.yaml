@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextjs-app
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nextjs-app
+  template:
+    metadata:
+      labels:
+        app: nextjs-app
+    spec:
+      containers:
+      - name: nextjs-container
+        # Image awal (nanti diupdate otomatis oleh Drone)
+        image: 10.0.0.10:3000/admin/nextjs-app:latest
+        ports:
+        - containerPort: 3000 # Next.js default port
+        
+      # PENTING: Secret untuk login ke Gitea Registry
+      imagePullSecrets:
+      - name: gitea-pull-secret
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextjs-service
+  namespace: dev
+spec:
+  type: NodePort # Agar bisa diakses dari browser laptop
+  selector:
+    app: nextjs-app
+  ports:
+    - protocol: TCP
+      port: 80       # Port akses service
+      targetPort: 3000 # Port container Next.js
+      nodePort: 30080 # Akses dari laptop via http://192.168.56.10:30080
